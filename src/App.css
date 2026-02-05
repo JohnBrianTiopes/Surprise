@@ -433,3 +433,215 @@ button:active {
   z-index: 50;
   backdrop-filter: blur(10px);
 }
+
+.experience {
+  position: relative;
+  padding: 12px 16px 0;
+}
+
+.miniInfo {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+}
+
+.envelopeStage {
+  display: grid;
+  place-items: center;
+  padding: 10px 0 6px;
+}
+
+.envelope {
+  width: 100%;
+  max-width: 420px;
+  height: 150px;
+  position: relative;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.09), rgba(0, 0, 0, 0.16));
+  overflow: hidden;
+}
+
+.envelope:hover {
+  transform: translateY(-2px);
+}
+
+.envBody {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(800px 150px at 20% 0%, rgba(255, 75, 139, 0.25), transparent 60%),
+    radial-gradient(700px 130px at 80% 0%, rgba(255, 209, 102, 0.18), transparent 58%);
+}
+
+.envTop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -2px;
+  height: 75px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.02));
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  opacity: 0.9;
+  animation: flap 1.8s ease-in-out infinite;
+  transform-origin: 50% 0%;
+}
+
+@keyframes flap {
+  0%,
+  100% {
+    transform: rotateX(0deg);
+  }
+  50% {
+    transform: rotateX(16deg);
+  }
+}
+
+.envSeal {
+  position: absolute;
+  left: 50%;
+  top: 62px;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(255, 75, 139, 0.85), rgba(255, 155, 196, 0.30));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.envText {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  text-align: center;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.questionStage {
+  padding: 10px 0 0;
+}
+
+.questionTitle {
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.noArea {
+  position: relative;
+  height: 120px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.12);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.noBtn {
+  position: absolute;
+  right: 22px;
+  top: 32px;
+}
+
+.meter {
+  position: relative;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.20);
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.meterBar {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255, 75, 139, 0.85), rgba(255, 209, 102, 0.55));
+}
+
+.meterText {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.25px;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.confetti {
+  position: absolute;
+  inset: -10px;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confettiPiece {
+  position: absolute;
+  top: -10px;
+  border-radius: 4px;
+  animation-name: confettiFall;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.25, 1);
+  animation-fill-mode: both;
+}
+
+@keyframes confettiFall {
+  from {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(220px) rotate(420deg);
+    opacity: 0;
+  }
+}
+
+.secretWrap {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.heartTap {
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(255, 75, 139, 0.70), rgba(255, 155, 196, 0.22));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.secretText {
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .envTop {
+    animation: none;
+  }
+  button:hover {
+    transform: none;
+  }
+}
