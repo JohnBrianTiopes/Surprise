@@ -180,6 +180,61 @@
   gap: 8px;
 }
 
+.photoComposer {
+  display: grid;
+  gap: 10px;
+}
+
+.photoList {
+  display: grid;
+  gap: 10px;
+}
+
+.photoItem {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.photoThumb {
+  width: 64px;
+  height: 48px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.photoThumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photoMeta {
+  min-width: 0;
+}
+
+.photoUrl {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.photoCaption {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.62);
+  margin-top: 2px;
+}
+
 .labelRow {
   display: flex;
   align-items: baseline;
@@ -525,6 +580,85 @@ button:active {
 
 .questionStage {
   padding: 10px 0 0;
+}
+
+.revealStage {
+  padding: 10px 0 0;
+}
+
+.revealTitle {
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 0.1px;
+  margin-bottom: 10px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.revealGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 420px) {
+  .revealGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.polaroid {
+  margin: 0;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+}
+
+.polaroid img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.polaroid figcaption {
+  margin-top: 8px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  min-height: 16px;
+}
+
+.revealActions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.photoStrip {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.photoMini {
+  width: 54px;
+  height: 42px;
+  padding: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.photoMini img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .questionTitle {

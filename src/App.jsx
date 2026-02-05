@@ -8,6 +8,19 @@ function clampLen(value, maxLen) {
   return trimmed.length > maxLen ? trimmed.slice(0, maxLen) : trimmed
 }
 
+function isProbablyImageUrl(url) {
+  if (typeof url !== 'string') return false
+  const trimmed = url.trim()
+  if (!trimmed) return false
+  try {
+    const u = new URL(trimmed)
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false
+    return true
+  } catch {
+    return false
+  }
+}
+
 function encodePayload(payload) {
   const json = JSON.stringify(payload)
   const bytes = new TextEncoder().encode(json)
@@ -50,8 +63,18 @@ function getInitialFromUrl() {
     const message = clampLen(decoded.message ?? '', 280)
     const theme = clampLen(decoded.theme ?? 'rose', 20)
     const secret = clampLen(decoded.secret ?? '', 140)
+    const photosRaw = Array.isArray(decoded.photos) ? decoded.photos : []
+    const photos = photosRaw
+      .slice(0, 6)
+      .map((p) => {
+        const url = clampLen(p?.url ?? '', 500)
+        const caption = clampLen(p?.caption ?? '', 60)
+        if (!isProbablyImageUrl(url)) return null
+        return { url, caption }
+      })
+      .filter(Boolean)
     if (!from && !to && !message) return null
-    return { from, to, message, theme, secret }
+    return { from, to, message, theme, secret, photos }
   } catch {
     return null
   }
@@ -135,9 +158,12 @@ function App() {
   )
   const [theme, setTheme] = useState(initialShared?.theme ?? 'rose')
   const [secret, setSecret] = useState(initialShared?.secret ?? '')
+  const [photos, setPhotos] = useState(initialShared?.photos ?? [])
+  const [newPhotoUrl, setNewPhotoUrl] = useState('')
+  const [newPhotoCaption, setNewPhotoCaption] = useState('')
   const [soundOn, setSoundOn] = useState(false)
   const [shareUrl, setShareUrl] = useState(() =>
-    buildShareUrl({ to: toName, from: fromName, message, theme, secret })
+    buildShareUrl({ to: toName, from: fromName, message, theme, secret, photos })
   )
   const [copied, setCopied] = useState(false)
   const [toast, setToast] = useState('')
@@ -158,9 +184,13 @@ function App() {
       message: clampLen(message, 280),
       theme,
       secret: clampLen(secret, 140),
+      photos: (Array.isArray(photos) ? photos : []).slice(0, 6).map((p) => ({
+        url: clampLen(p?.url ?? '', 500),
+        caption: clampLen(p?.caption ?? '', 60),
+      })),
     }
     setShareUrl(buildShareUrl(payload))
-  }, [toName, fromName, message, theme, secret])
+  }, [toName, fromName, message, theme, secret, photos])
 
   useEffect(() => {
     const titleBase = toName ? `A Valentine for ${toName}` : 'A Valentine'
@@ -180,8 +210,12 @@ function App() {
       message: clampLen(message, 280),
       theme,
       secret: clampLen(secret, 140),
+      photos: (Array.isArray(photos) ? photos : []).slice(0, 6).map((p) => ({
+        url: clampLen(p?.url ?? '', 500),
+        caption: clampLen(p?.caption ?? '', 60),
+      })),
     }),
-    [toName, fromName, message, theme, secret]
+    [toName, fromName, message, theme, secret, photos]
   )
 
   const daysLeft = useMemo(() => daysUntilNextValentines(), [])
@@ -254,11 +288,17 @@ function App() {
   }
 
   function onOpenEnvelope() {
-    setViewerStep('question')
+    const hasPhotos = Array.isArray(payload.photos) && payload.photos.length > 0
+    setViewerStep(hasPhotos ? 'reveal' : 'question')
     setHeartTaps(0)
     setNoStyle(null)
     setNoDodges(0)
     showToast('Okay… one question first')
+  }
+
+  function onContinueAfterReveal() {
+    setViewerStep('question')
+    showToast('One quick question…')
   }
 
   function dodgeNo() {
@@ -278,6 +318,29 @@ function App() {
     if (soundOn) playChime()
     window.setTimeout(() => setConfettiOn(false), 1400)
     showToast('Yay!')
+  }
+
+  function onAddPhoto() {
+    const url = clampLen(newPhotoUrl, 500)
+    const caption = clampLen(newPhotoCaption, 60)
+    if (!isProbablyImageUrl(url)) {
+      showToast('Paste a public image URL (https://...)')
+      return
+    }
+    setPhotos((list) => {
+      const next = Array.isArray(list) ? [...list] : []
+      if (next.length >= 6) return next
+      next.push({ url, caption })
+      return next
+    })
+    setNewPhotoUrl('')
+    setNewPhotoCaption('')
+    showToast('Photo added')
+  }
+
+  function onRemovePhoto(idx) {
+    setPhotos((list) => (Array.isArray(list) ? list.filter((_, i) => i !== idx) : []))
+    showToast('Photo removed')
   }
 
   return (
@@ -336,6 +399,54 @@ function App() {
                 autoComplete="off"
               />
             </label>
+
+            <div className="field">
+              <div className="labelRow">
+                <span>Photo album (shows when envelope opens)</span>
+                <span className="hint">{Array.isArray(photos) ? photos.length : 0}/6</span>
+              </div>
+
+              <div className="photoComposer">
+                <input
+                  value={newPhotoUrl}
+                  onChange={(e) => setNewPhotoUrl(e.target.value)}
+                  placeholder="Paste image URL (https://...)"
+                  autoComplete="off"
+                  inputMode="url"
+                />
+                <input
+                  value={newPhotoCaption}
+                  onChange={(e) => setNewPhotoCaption(e.target.value)}
+                  placeholder="Caption (optional)"
+                  maxLength={60}
+                  autoComplete="off"
+                />
+                <button className="secondary" type="button" onClick={onAddPhoto} disabled={(Array.isArray(photos) ? photos.length : 0) >= 6}>
+                  Add photo
+                </button>
+              </div>
+
+              {Array.isArray(photos) && photos.length ? (
+                <div className="photoList">
+                  {photos.map((p, idx) => (
+                    <div className="photoItem" key={`${p.url}-${idx}`}>
+                      <div className="photoThumb">
+                        <img src={p.url} alt={p.caption || 'Photo'} loading="lazy" />
+                      </div>
+                      <div className="photoMeta">
+                        <div className="photoUrl" title={p.url}>{p.url}</div>
+                        <div className="photoCaption">{p.caption || '—'}</div>
+                      </div>
+                      <button className="ghost" type="button" onClick={() => onRemovePhoto(idx)}>
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="miniInfo">Tip: use a public image URL (anyone can open it). The link must not require login.</div>
+              )}
+            </div>
 
             <label className="field">
               <div className="labelRow">
@@ -478,6 +589,25 @@ function App() {
                   </div>
                 ) : null}
 
+                {viewerStep === 'reveal' ? (
+                  <div className="revealStage">
+                    <div className="revealTitle">A little photo surprise ✨</div>
+                    <div className="revealGrid">
+                      {(payload.photos || []).slice(0, 6).map((p, idx) => (
+                        <figure className="polaroid" key={`${p.url}-${idx}`}>
+                          <img src={p.url} alt={p.caption || `Photo ${idx + 1}`} loading="lazy" />
+                          <figcaption>{p.caption || ' '}</figcaption>
+                        </figure>
+                      ))}
+                    </div>
+                    <div className="revealActions">
+                      <button className="primary" onClick={onContinueAfterReveal}>
+                        Continue
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
                 {viewerStep === 'question' ? (
                   <div className="questionStage">
                     <div className="questionTitle">
@@ -519,6 +649,24 @@ function App() {
                 <span className="fromLabel">—</span>
                 <span className="fromName">{payload.from || 'Someone who cares'}</span>
               </div>
+
+              {Array.isArray(payload.photos) && payload.photos.length ? (
+                <div className="photoStrip" aria-label="Photos">
+                  {payload.photos.slice(0, 6).map((p, idx) => (
+                    <button
+                      key={`${p.url}-${idx}`}
+                      type="button"
+                      className="photoMini"
+                      onClick={() => {
+                        showToast(p.caption || `Photo ${idx + 1}`)
+                      }}
+                      title={p.caption || `Photo ${idx + 1}`}
+                    >
+                      <img src={p.url} alt={p.caption || `Photo ${idx + 1}`} loading="lazy" />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
 
               <div className="secretWrap">
                 <button
