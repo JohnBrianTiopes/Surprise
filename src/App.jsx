@@ -460,6 +460,7 @@ function App() {
       </header>
 
       <main className="layout">
+        {mode === 'create' ? (
         <section className="panel">
           <div className="panelHeader">
             <h1 className="h1">Make a Valentine</h1>
@@ -614,6 +615,7 @@ function App() {
             </div>
           </div>
         </section>
+        ) : null}
 
         <section className="cardWrap">
           <article className={mode === 'view' ? 'card cardPop' : 'card'}>
@@ -699,33 +701,9 @@ function App() {
                 {viewerStep === 'question' ? (
                   <div className="questionStage">
                     <div className="questionTitle">
-                      <div className="photoActions">
-                        <button
-                          className="secondary"
-                          type="button"
-                          onClick={onAddPhoto}
-                          disabled={photoBusy || (Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS}
-                        >
-                          Add by link
-                        </button>
-                        <button
-                          className="secondary"
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={photoBusy || (Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS}
-                          title="Pick an image from your device and embed it into the share link"
-                        >
-                          {photoBusy ? 'Working…' : 'Add from device'}
-                        </button>
-                      </div>
-
-                      <input
-                        ref={fileInputRef}
-                        className="fileInput"
-                        type="file"
-                        accept="image/*"
-                        onChange={onAddFromDevice}
-                      />
+                      {payload.to ? `${payload.to}, will you be my Valentine?` : 'Will you be my Valentine?'}
+                    </div>
+                    <div className="meter" aria-label={`Love meter ${lovePercent} percent`}>
                       <div className="meterBar" style={{ width: `${lovePercent}%` }} />
                       <div className="meterText">Love meter: {lovePercent}%</div>
                     </div>
