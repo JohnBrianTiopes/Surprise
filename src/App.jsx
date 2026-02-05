@@ -8,17 +8,58 @@ function clampLen(value, maxLen) {
   return trimmed.length > maxLen ? trimmed.slice(0, maxLen) : trimmed
 }
 
-function isProbablyImageUrl(url) {
+function isSupportedImageSrc(url) {
   if (typeof url !== 'string') return false
   const trimmed = url.trim()
   if (!trimmed) return false
+  if (trimmed.startsWith('data:image/')) return true
   try {
     const u = new URL(trimmed)
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false
-    return true
+    return u.protocol === 'http:' || u.protocol === 'https:'
   } catch {
     return false
   }
+}
+
+const MAX_PHOTOS = 6
+const MAX_SHARE_URL_LEN = 7000
+
+async function fileToCompressedDataUrl(file, { maxDim = 900, quality = 0.78 } = {}) {
+  if (!file) throw new Error('No file')
+  if (!file.type?.startsWith('image/')) throw new Error('Not an image')
+
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('Read failed'))
+    reader.readAsDataURL(file)
+  })
+
+  const img = await new Promise((resolve, reject) => {
+    const el = new Image()
+    el.onload = () => resolve(el)
+    el.onerror = () => reject(new Error('Image load failed'))
+    el.src = dataUrl
+  })
+
+  const srcW = img.naturalWidth || img.width
+  const srcH = img.naturalHeight || img.height
+  if (!srcW || !srcH) return dataUrl
+
+  const scale = Math.min(1, maxDim / Math.max(srcW, srcH))
+  const outW = Math.max(1, Math.round(srcW * scale))
+  const outH = Math.max(1, Math.round(srcH * scale))
+
+  const canvas = document.createElement('canvas')
+  canvas.width = outW
+  canvas.height = outH
+  const ctx = canvas.getContext('2d', { alpha: false })
+  if (!ctx) return dataUrl
+  ctx.drawImage(img, 0, 0, outW, outH)
+
+  // Prefer JPEG for size; keep PNG/GIF only if already small.
+  const asJpeg = canvas.toDataURL('image/jpeg', quality)
+  return asJpeg.length < dataUrl.length ? asJpeg : dataUrl
 }
 
 function encodePayload(payload) {
@@ -65,11 +106,11 @@ function getInitialFromUrl() {
     const secret = clampLen(decoded.secret ?? '', 140)
     const photosRaw = Array.isArray(decoded.photos) ? decoded.photos : []
     const photos = photosRaw
-      .slice(0, 6)
+      .slice(0, MAX_PHOTOS)
       .map((p) => {
         const url = clampLen(p?.url ?? '', 500)
         const caption = clampLen(p?.caption ?? '', 60)
-        if (!isProbablyImageUrl(url)) return null
+        if (!isSupportedImageSrc(url)) return null
         return { url, caption }
       })
       .filter(Boolean)
@@ -161,6 +202,8 @@ function App() {
   const [photos, setPhotos] = useState(initialShared?.photos ?? [])
   const [newPhotoUrl, setNewPhotoUrl] = useState('')
   const [newPhotoCaption, setNewPhotoCaption] = useState('')
+  const fileInputRef = useRef(null)
+  const [photoBusy, setPhotoBusy] = useState(false)
   const [soundOn, setSoundOn] = useState(false)
   const [shareUrl, setShareUrl] = useState(() =>
     buildShareUrl({ to: toName, from: fromName, message, theme, secret, photos })
@@ -218,6 +261,8 @@ function App() {
     [toName, fromName, message, theme, secret, photos]
   )
 
+  const shareTooLong = shareUrl.length > MAX_SHARE_URL_LEN
+
   const daysLeft = useMemo(() => daysUntilNextValentines(), [])
   const lovePercent = useMemo(() => seededPercent(payload.from, payload.to), [payload.from, payload.to])
   const unlockedSecret = heartTaps >= 7
@@ -242,6 +287,10 @@ function App() {
   }
 
   async function onCopy() {
+    if (shareTooLong) {
+      showToast('Link too long — remove photos or compress more')
+      return
+    }
     try {
       await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
@@ -253,6 +302,10 @@ function App() {
   }
 
   async function onShare() {
+    if (shareTooLong) {
+      showToast('Link too long — remove photos or compress more')
+      return
+    }
     if (!navigator.share) {
       showToast('Sharing not supported here — copy the link instead')
       return
@@ -269,6 +322,10 @@ function App() {
   }
 
   function onOpenViewer() {
+    if (shareTooLong) {
+      showToast('Link too long — remove photos first')
+      return
+    }
     window.history.replaceState({}, '', new URL(shareUrl).toString())
     setMode('view')
     if (sharedExperienceEnabled) setViewerStep('envelope')
@@ -323,19 +380,45 @@ function App() {
   function onAddPhoto() {
     const url = clampLen(newPhotoUrl, 500)
     const caption = clampLen(newPhotoCaption, 60)
-    if (!isProbablyImageUrl(url)) {
-      showToast('Paste a public image URL (https://...)')
+    if (!isSupportedImageSrc(url)) {
+      showToast('Paste a public image URL (https://...) or a data:image/... URL')
       return
     }
     setPhotos((list) => {
       const next = Array.isArray(list) ? [...list] : []
-      if (next.length >= 6) return next
+      if (next.length >= MAX_PHOTOS) return next
       next.push({ url, caption })
       return next
     })
     setNewPhotoUrl('')
     setNewPhotoCaption('')
     showToast('Photo added')
+  }
+
+  async function onAddFromDevice(e) {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    try {
+      if ((Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS) {
+        showToast('Max 6 photos')
+        return
+      }
+      setPhotoBusy(true)
+      showToast('Compressing photo…')
+      const dataUrl = await fileToCompressedDataUrl(file, { maxDim: 900, quality: 0.78 })
+      setPhotos((list) => {
+        const next = Array.isArray(list) ? [...list] : []
+        if (next.length >= MAX_PHOTOS) return next
+        next.push({ url: dataUrl, caption: clampLen(newPhotoCaption, 60) })
+        return next
+      })
+      showToast('Photo added from device')
+    } catch {
+      showToast('Could not add photo')
+    } finally {
+      setPhotoBusy(false)
+    }
   }
 
   function onRemovePhoto(idx) {
@@ -518,6 +601,11 @@ function App() {
                   {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
+              {shareTooLong ? (
+                <div className="miniInfo">
+                  Link is too long to reliably share. Remove photos or use fewer/smaller ones.
+                </div>
+              ) : null}
               <div className="shareHints">
                 <button className="link" type="button" onClick={onOpenViewer}>
                   Open the shared view
@@ -611,9 +699,33 @@ function App() {
                 {viewerStep === 'question' ? (
                   <div className="questionStage">
                     <div className="questionTitle">
-                      {payload.to ? `${payload.to}, will you be my Valentine?` : 'Will you be my Valentine?'}
-                    </div>
-                    <div className="meter" aria-label={`Love meter ${lovePercent} percent`}>
+                      <div className="photoActions">
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={onAddPhoto}
+                          disabled={photoBusy || (Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS}
+                        >
+                          Add by link
+                        </button>
+                        <button
+                          className="secondary"
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={photoBusy || (Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS}
+                          title="Pick an image from your device and embed it into the share link"
+                        >
+                          {photoBusy ? 'Working…' : 'Add from device'}
+                        </button>
+                      </div>
+
+                      <input
+                        ref={fileInputRef}
+                        className="fileInput"
+                        type="file"
+                        accept="image/*"
+                        onChange={onAddFromDevice}
+                      />
                       <div className="meterBar" style={{ width: `${lovePercent}%` }} />
                       <div className="meterText">Love meter: {lovePercent}%</div>
                     </div>

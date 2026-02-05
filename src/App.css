@@ -185,6 +185,16 @@
   gap: 10px;
 }
 
+.photoActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fileInput {
+  display: none;
+}
+
 .photoList {
   display: grid;
   gap: 10px;
