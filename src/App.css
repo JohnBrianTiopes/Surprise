@@ -1,0 +1,435 @@
+.page {
+  min-height: 100vh;
+  padding: 24px;
+  color: var(--fg);
+  background: radial-gradient(1200px 700px at 20% 10%, rgba(255, 84, 142, 0.25), transparent 55%),
+    radial-gradient(900px 600px at 80% 20%, rgba(255, 196, 87, 0.20), transparent 52%),
+    linear-gradient(180deg, var(--bg0), var(--bg1));
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-rose {
+  --bg0: #12040a;
+  --bg1: #0b0612;
+  --fg: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.62);
+  --card: rgba(255, 255, 255, 0.08);
+  --stroke: rgba(255, 255, 255, 0.12);
+  --accent: #ff4b8b;
+  --accent2: #ff9bc4;
+}
+
+.theme-candy {
+  --bg0: #0a0a12;
+  --bg1: #071215;
+  --fg: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.62);
+  --card: rgba(255, 255, 255, 0.085);
+  --stroke: rgba(255, 255, 255, 0.12);
+  --accent: #ff6a3d;
+  --accent2: #ffd166;
+}
+
+.theme-midnight {
+  --bg0: #05060a;
+  --bg1: #060a14;
+  --fg: rgba(255, 255, 255, 0.92);
+  --muted: rgba(255, 255, 255, 0.62);
+  --card: rgba(255, 255, 255, 0.075);
+  --stroke: rgba(255, 255, 255, 0.12);
+  --accent: #7c4dff;
+  --accent2: #00d4ff;
+}
+
+.bg-hearts {
+  position: absolute;
+  inset: -100px;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 75, 139, 0.14) 0 3px, transparent 3px),
+    radial-gradient(circle at 60% 70%, rgba(255, 155, 196, 0.12) 0 2px, transparent 2px),
+    radial-gradient(circle at 80% 35%, rgba(255, 209, 102, 0.10) 0 3px, transparent 3px);
+  filter: blur(0.2px);
+  opacity: 0.9;
+}
+
+.bg-hearts::before,
+.bg-hearts::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-repeat: repeat;
+  background-size: 220px 220px;
+  opacity: 0.65;
+  mix-blend-mode: screen;
+  animation: floatHearts 18s linear infinite;
+  background-image:
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.10) 0 1px, transparent 2px),
+    radial-gradient(circle at 75% 65%, rgba(255, 255, 255, 0.08) 0 1px, transparent 2px);
+}
+
+.bg-hearts::after {
+  animation-duration: 26s;
+  opacity: 0.5;
+  transform: rotate(8deg);
+}
+
+@keyframes floatHearts {
+  from {
+    transform: translateY(0px);
+  }
+  to {
+    transform: translateY(160px);
+  }
+}
+
+.topbar {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0 22px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brandMark {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(255, 75, 139, 0.22), rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--stroke);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.brandTitle {
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.brandSub {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.topActions {
+  display: flex;
+  gap: 10px;
+}
+
+.layout {
+  position: relative;
+  z-index: 1;
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 18px;
+}
+
+@media (max-width: 920px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  backdrop-filter: blur(10px);
+  padding: 18px;
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35);
+}
+
+.panelHeader {
+  padding: 4px 4px 12px;
+}
+
+.h1 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: -0.3px;
+}
+
+.muted {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+  padding: 6px 4px 4px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 650;
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+input,
+textarea {
+  width: 100%;
+  color: var(--fg);
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 12px 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+input:focus,
+textarea:focus {
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.themeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.chipActive {
+  background: linear-gradient(135deg, rgba(255, 75, 139, 0.26), rgba(255, 255, 255, 0.06));
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.shareBox {
+  margin-top: 4px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.shareLabel {
+  font-weight: 750;
+  margin-bottom: 10px;
+}
+
+.shareRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.shareHints {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+button {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 750;
+  font-family: inherit;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.92);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+button:active {
+  transform: translateY(0px);
+}
+
+.primary {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: linear-gradient(135deg, rgba(255, 75, 139, 0.85), rgba(255, 155, 196, 0.35));
+}
+
+.secondary {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ghost {
+  background: transparent;
+}
+
+.success {
+  background: rgba(63, 232, 159, 0.18);
+  border-color: rgba(63, 232, 159, 0.26);
+}
+
+.link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.88);
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+.cardWrap {
+  display: grid;
+  align-items: start;
+}
+
+.card {
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  backdrop-filter: blur(10px);
+  box-shadow: 0 35px 90px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.cardPop {
+  animation: popIn 500ms cubic-bezier(0.2, 0.9, 0.2, 1);
+}
+
+@keyframes popIn {
+  from {
+    transform: translateY(10px) scale(0.99);
+    opacity: 0.2;
+  }
+  to {
+    transform: translateY(0px) scale(1);
+    opacity: 1;
+  }
+}
+
+.cardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 14px 0;
+}
+
+.badge {
+  font-weight: 900;
+  letter-spacing: 0.4px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.82);
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.miniActions {
+  display: flex;
+  align-items: center;
+}
+
+.tiny {
+  padding: 8px 10px;
+  border-radius: 999px;
+}
+
+.cardBody {
+  padding: 16px 16px 10px;
+}
+
+.toLine {
+  margin: 6px 0 10px;
+  font-size: 20px;
+}
+
+.message {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+}
+
+.fromLine {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.fromLabel {
+  opacity: 0.7;
+}
+
+.fromName {
+  font-weight: 850;
+}
+
+.cardBottom {
+  padding: 10px 16px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.smallMuted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.ctaRow {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 999px;
+  z-index: 50;
+  backdrop-filter: blur(10px);
+}
