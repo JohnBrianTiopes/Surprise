@@ -113,7 +113,7 @@ function isSupportedImageSrc(url) {
 }
 
 const MAX_PHOTOS = 6
-const MAX_SHARE_URL_LEN = 7000
+const MAX_SHARE_URL_LEN = 250000
 const MAX_MESSAGE_LEN = 2000
 const MAX_DATA_IMAGE_URL_LEN = 900000
 const MAX_HTTP_IMAGE_URL_LEN = 2000
@@ -220,22 +220,41 @@ function decodePayload(encoded) {
 
 function buildShareUrl(payload) {
   const url = new URL(window.location.href)
-  url.searchParams.set('v', encodePayload(payload))
+  url.searchParams.delete('v')
   url.searchParams.delete('e')
+  url.hash = `v=${encodePayload(payload)}`
   return url.toString()
 }
 
 function buildEncryptedShareUrl(envelope) {
   const url = new URL(window.location.href)
-  url.searchParams.set('e', encodePayload(envelope))
   url.searchParams.delete('v')
+  url.searchParams.delete('e')
   url.searchParams.delete('id')
+  url.hash = `e=${encodePayload(envelope)}`
   return url.toString()
 }
 
 function getSharedFromUrl() {
   try {
     const params = new URLSearchParams(window.location.search)
+
+    // Prefer hash-based sharing so huge payloads don't hit server URL limits.
+    const hashRaw = String(window.location.hash || '')
+    const hash = hashRaw.startsWith('#') ? hashRaw.slice(1) : hashRaw
+    const hashParams = new URLSearchParams(hash)
+    const hashEncrypted = hashParams.get('e')
+    if (hashEncrypted) {
+      const decoded = decodePayload(hashEncrypted)
+      if (!decoded || typeof decoded !== 'object') return { kind: 'encrypted', envelope: null }
+      return { kind: 'encrypted', envelope: decoded }
+    }
+    const hashPlain = hashParams.get('v')
+    if (hashPlain) {
+      const decoded = decodePayload(hashPlain)
+      if (!decoded || typeof decoded !== 'object') return null
+      return { kind: 'plain', payload: decoded }
+    }
 
     const privateId = params.get('id')
     if (privateId) {
@@ -563,6 +582,7 @@ function App() {
     url.searchParams.delete('v')
     url.searchParams.delete('e')
     url.searchParams.delete('id')
+    url.hash = ''
     window.history.replaceState({}, '', url.toString())
     setMode('create')
     setViewerStep('card')
