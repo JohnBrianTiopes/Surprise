@@ -340,11 +340,17 @@ function playChime() {
     const AudioCtx = window.AudioContext || window.webkitAudioContext
     if (!AudioCtx) return
     const ctx = new AudioCtx()
+    try {
+      // Some browsers start suspended; resume on a user gesture.
+      ctx.resume?.().catch(() => {})
+    } catch {
+      // ignore
+    }
     const now = ctx.currentTime
 
     const out = ctx.createGain()
     out.gain.setValueAtTime(0.0001, now)
-    out.gain.exponentialRampToValueAtTime(0.18, now + 0.02)
+    out.gain.exponentialRampToValueAtTime(0.26, now + 0.02)
     out.gain.exponentialRampToValueAtTime(0.0001, now + 0.65)
     out.connect(ctx.destination)
 
@@ -355,7 +361,7 @@ function playChime() {
       osc.frequency.setValueAtTime(f, now)
       const g = ctx.createGain()
       g.gain.setValueAtTime(0.0001, now)
-      g.gain.exponentialRampToValueAtTime(0.14 / (idx + 1), now + 0.02)
+      g.gain.exponentialRampToValueAtTime(0.18 / (idx + 1), now + 0.02)
       g.gain.exponentialRampToValueAtTime(0.0001, now + 0.55)
       osc.connect(g)
       g.connect(out)
@@ -387,7 +393,7 @@ function App() {
   const [fromName, setFromName] = useState(initialPlainPayload?.from ?? '')
   const [message, setMessage] = useState(
     initialPlainPayload?.message ??
-      "Roses are red,\nViolets are blue,\nI made this little page,\nJust for you."
+      "Hey love,\n\nI don’t even know how to fit all of this into words, but I’ll try.\n\nI love the way you exist in my life — the way you make ordinary days feel lighter, and the way you make me want to be better without ever asking. When I’m with you, it feels like my heart finally found its home.\n\nThank you for the patience you give me, the softness you carry, and the little moments you don’t even realize you’ve made special. I choose you — in the loud days and the quiet ones, in the easy moments and the messy ones.\n\nHappy Valentine’s Day. I’m so grateful it’s you."
   )
   const [theme, setTheme] = useState(initialPlainPayload?.theme ?? 'rose')
   const [secret, setSecret] = useState(initialPlainPayload?.secret ?? '')
@@ -493,6 +499,33 @@ function App() {
       if (openingTimerRef.current) window.clearTimeout(openingTimerRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    // Autoplay is usually blocked. Prime the chime on the recipient's first tap.
+    if (!hasSharedLink) return
+    if (!soundOn) return
+    if (locked) return
+    if (prefersReducedMotion()) return
+
+    let didPlay = false
+    const onFirst = () => {
+      if (didPlay) return
+      didPlay = true
+      playChime()
+      window.removeEventListener('pointerdown', onFirst, true)
+      window.removeEventListener('touchstart', onFirst, true)
+      window.removeEventListener('keydown', onFirst, true)
+    }
+
+    window.addEventListener('pointerdown', onFirst, true)
+    window.addEventListener('touchstart', onFirst, true)
+    window.addEventListener('keydown', onFirst, true)
+    return () => {
+      window.removeEventListener('pointerdown', onFirst, true)
+      window.removeEventListener('touchstart', onFirst, true)
+      window.removeEventListener('keydown', onFirst, true)
+    }
+  }, [hasSharedLink, soundOn, locked])
 
   const payload = useMemo(
     () => ({
