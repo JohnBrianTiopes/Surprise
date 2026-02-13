@@ -113,7 +113,7 @@ function isSupportedImageSrc(url) {
 }
 
 const MAX_PHOTOS = 6
-const MAX_SHARE_URL_LEN = 250000
+const MAX_SHARE_URL_LEN = 800000
 const MAX_MESSAGE_LEN = 2000
 const MAX_DATA_IMAGE_URL_LEN = 900000
 const MAX_HTTP_IMAGE_URL_LEN = 2000
@@ -403,6 +403,7 @@ function App() {
   const [privateUrl, setPrivateUrl] = useState('')
   const [privateBusy, setPrivateBusy] = useState(false)
 
+  const [newPhotoUrl, setNewPhotoUrl] = useState('')
   const [newPhotoCaption, setNewPhotoCaption] = useState('')
   const fileInputRef = useRef(null)
   const [photoBusy, setPhotoBusy] = useState(false)
@@ -532,25 +533,19 @@ function App() {
   }
 
   async function onCopy() {
-    if (shareTooLong) {
-      showToast('Link too long — remove photos or compress more')
-      return
-    }
     try {
       await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
-      showToast('Link copied')
+      showToast(shareTooLong ? 'Link copied (very long — sharing may fail in some apps)' : 'Link copied')
       window.setTimeout(() => setCopied(false), 1200)
     } catch {
-      showToast('Copy failed — you can select the link and copy it')
+      showToast(shareTooLong
+        ? 'Copy failed — link is very long. Use Private link or fewer photos.'
+        : 'Copy failed — you can select the link and copy it')
     }
   }
 
   async function onShare() {
-    if (shareTooLong) {
-      showToast('Link too long — remove photos or compress more')
-      return
-    }
     if (!navigator.share) {
       showToast('Sharing not supported here — copy the link instead')
       return
@@ -567,10 +562,6 @@ function App() {
   }
 
   function onOpenViewer() {
-    if (shareTooLong) {
-      showToast('Link too long — remove photos first')
-      return
-    }
     window.history.replaceState({}, '', new URL(shareUrl).toString())
     setMode('view')
     if (sharedExperienceEnabled) setViewerStep('envelope')
@@ -790,6 +781,24 @@ function App() {
     fileInputRef.current?.click?.()
   }
 
+  function onAddPhotoByUrl() {
+    const url = clampPhotoUrl(newPhotoUrl)
+    const caption = clampLen(newPhotoCaption, 60)
+    if (!isSupportedImageSrc(url)) {
+      showToast('Paste a public image URL (https://...)')
+      return
+    }
+    setPhotos((list) => {
+      const next = Array.isArray(list) ? [...list] : []
+      if (next.length >= MAX_PHOTOS) return next
+      next.push({ url, caption })
+      return next
+    })
+    setNewPhotoUrl('')
+    setNewPhotoCaption('')
+    showToast('Photo added')
+  }
+
   async function onAddFromDevice(e) {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -807,7 +816,7 @@ function App() {
       }
       setPhotoBusy(true)
       showToast('Compressing photo…')
-      const dataUrl = await fileToCompressedDataUrl(file, { maxDim: 900, quality: 0.78 })
+      const dataUrl = await fileToCompressedDataUrl(file, { maxDim: 900, quality: 0.78, targetDataUrlLen: 120000 })
       setPhotos((list) => {
         const next = Array.isArray(list) ? [...list] : []
         if (next.length >= MAX_PHOTOS) return next
@@ -899,6 +908,13 @@ function App() {
 
               <div className="photoComposer">
                 <input
+                  value={newPhotoUrl}
+                  onChange={(e) => setNewPhotoUrl(e.target.value)}
+                  placeholder="Paste image URL (https://...)"
+                  autoComplete="off"
+                  inputMode="url"
+                />
+                <input
                   value={newPhotoCaption}
                   onChange={(e) => setNewPhotoCaption(e.target.value)}
                   placeholder="Caption (optional)"
@@ -919,6 +935,15 @@ function App() {
                   disabled={photoBusy || (Array.isArray(photos) ? photos.length : 0) >= 6}
                 >
                   {photoBusy ? 'Working…' : 'Add photo'}
+                </button>
+
+                <button
+                  className="ghost"
+                  type="button"
+                  onClick={onAddPhotoByUrl}
+                  disabled={(Array.isArray(photos) ? photos.length : 0) >= 6}
+                >
+                  Add by URL
                 </button>
               </div>
 
