@@ -128,7 +128,10 @@ function normalizePhotoUrl(url) {
   return typeof url === 'string' ? url.trim() : ''
 }
 
-async function fileToCompressedDataUrl(file, { maxDim = 900, quality = 0.78 } = {}) {
+async function fileToCompressedDataUrl(
+  file,
+  { maxDim = 900, quality = 0.78, targetDataUrlLen = 220000 } = {}
+) {
   if (!file) throw new Error('No file')
   if (!file.type?.startsWith('image/')) throw new Error('Not an image')
 
@@ -150,20 +153,45 @@ async function fileToCompressedDataUrl(file, { maxDim = 900, quality = 0.78 } = 
   const srcH = img.naturalHeight || img.height
   if (!srcW || !srcH) return dataUrl
 
-  const scale = Math.min(1, maxDim / Math.max(srcW, srcH))
-  const outW = Math.max(1, Math.round(srcW * scale))
-  const outH = Math.max(1, Math.round(srcH * scale))
+  function renderToJpeg(dim, q) {
+    const scale = Math.min(1, dim / Math.max(srcW, srcH))
+    const outW = Math.max(1, Math.round(srcW * scale))
+    const outH = Math.max(1, Math.round(srcH * scale))
 
-  const canvas = document.createElement('canvas')
-  canvas.width = outW
-  canvas.height = outH
-  const ctx = canvas.getContext('2d', { alpha: false })
-  if (!ctx) return dataUrl
-  ctx.drawImage(img, 0, 0, outW, outH)
+    const canvas = document.createElement('canvas')
+    canvas.width = outW
+    canvas.height = outH
+    const ctx = canvas.getContext('2d', { alpha: false })
+    if (!ctx) return null
+    ctx.drawImage(img, 0, 0, outW, outH)
+    return canvas.toDataURL('image/jpeg', q)
+  }
 
-  // Prefer JPEG for size; keep PNG/GIF only if already small.
-  const asJpeg = canvas.toDataURL('image/jpeg', quality)
-  return asJpeg.length < dataUrl.length ? asJpeg : dataUrl
+  // Iteratively reduce quality (and then dimensions) until the data URL is small enough
+  // to survive being embedded into a share link.
+  let best = null
+  let bestLen = Infinity
+  let dim = maxDim
+
+  for (let dimPass = 0; dimPass < 4; dimPass++) {
+    const qualities = [quality, 0.72, 0.64, 0.56, 0.48, 0.4]
+    for (const q of qualities) {
+      const jpeg = renderToJpeg(dim, q)
+      if (!jpeg) continue
+      const len = jpeg.length
+      if (len < bestLen) {
+        best = jpeg
+        bestLen = len
+      }
+      if (len <= targetDataUrlLen) {
+        return len < dataUrl.length ? jpeg : dataUrl
+      }
+    }
+    dim = Math.max(420, Math.round(dim * 0.82))
+  }
+
+  if (!best) return dataUrl
+  return bestLen < dataUrl.length ? best : dataUrl
 }
 
 function encodePayload(payload) {
