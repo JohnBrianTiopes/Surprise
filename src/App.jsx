@@ -112,7 +112,7 @@ function isSupportedImageSrc(url) {
   }
 }
 
-const MAX_PHOTOS = 6
+const MAX_PHOTOS = 15
 const MAX_SHARE_URL_LEN = 800000
 const MAX_MESSAGE_LEN = 2000
 const MAX_DATA_IMAGE_URL_LEN = 900000
@@ -222,6 +222,7 @@ function buildShareUrl(payload) {
   const url = new URL(window.location.href)
   url.searchParams.delete('v')
   url.searchParams.delete('e')
+  url.searchParams.delete('id')
   url.hash = `v=${encodePayload(payload)}`
   return url.toString()
 }
@@ -286,6 +287,9 @@ function sanitizeCardPayload(decoded) {
   const message = clampLen(decoded.message ?? '', MAX_MESSAGE_LEN)
   const theme = clampLen(decoded.theme ?? 'rose', 20)
   const secret = clampLen(decoded.secret ?? '', 140)
+  const giftRaw = clampLen(decoded.gift ?? '❤', 10)
+  const allowedGifts = new Set(['❤', '🌹', '🧸'])
+  const gift = allowedGifts.has(giftRaw) ? giftRaw : '❤'
   const photosRaw = Array.isArray(decoded.photos) ? decoded.photos : []
   const photos = photosRaw
     .slice(0, MAX_PHOTOS)
@@ -297,7 +301,7 @@ function sanitizeCardPayload(decoded) {
     })
     .filter(Boolean)
   if (!from && !to && !message) return null
-  return { from, to, message, theme, secret, photos }
+  return { from, to, message, theme, secret, gift, photos }
 }
 
 const THEMES = [
@@ -387,6 +391,7 @@ function App() {
   )
   const [theme, setTheme] = useState(initialPlainPayload?.theme ?? 'rose')
   const [secret, setSecret] = useState(initialPlainPayload?.secret ?? '')
+  const [gift, setGift] = useState(initialPlainPayload?.gift ?? '❤')
   const [photos, setPhotos] = useState(initialPlainPayload?.photos ?? [])
   const [passcode, setPasscode] = useState('')
 
@@ -426,6 +431,7 @@ function App() {
 
   const sharedExperienceEnabled = hasSharedLink
   const [viewerStep, setViewerStep] = useState(sharedExperienceEnabled ? 'envelope' : 'card')
+  const openingTimerRef = useRef(null)
   const [confettiOn, setConfettiOn] = useState(false)
   const [heartTaps, setHeartTaps] = useState(0)
   const noAreaRef = useRef(null)
@@ -445,8 +451,9 @@ function App() {
       message: clampLen(message, MAX_MESSAGE_LEN),
       theme,
       secret: clampLen(secret, 140),
+      gift,
       nonce: clampLen(cardNonce, 80),
-      photos: (Array.isArray(photos) ? photos : []).slice(0, 6).map((p) => ({
+      photos: (Array.isArray(photos) ? photos : []).slice(0, MAX_PHOTOS).map((p) => ({
         url: clampPhotoUrl(p?.url ?? ''),
         caption: clampLen(p?.caption ?? '', 60),
       })),
@@ -473,7 +480,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [mode, hasSharedLink, toName, fromName, message, theme, secret, photos, passcode, cardNonce])
+  }, [mode, hasSharedLink, toName, fromName, message, theme, secret, gift, photos, passcode, cardNonce])
 
   useEffect(() => {
     const titleBase = toName ? `A Valentine for ${toName}` : 'A Valentine'
@@ -483,6 +490,7 @@ function App() {
   useEffect(() => {
     return () => {
       if (toastTimer.current) window.clearTimeout(toastTimer.current)
+      if (openingTimerRef.current) window.clearTimeout(openingTimerRef.current)
     }
   }, [])
 
@@ -493,9 +501,10 @@ function App() {
       message: clampLen(message, MAX_MESSAGE_LEN),
       theme,
       secret: clampLen(secret, 140),
+      gift,
       // For rendering, keep the full photo URLs (especially data:image/...) so images don't break.
       photos: (Array.isArray(photos) ? photos : [])
-        .slice(0, 6)
+        .slice(0, MAX_PHOTOS)
         .map((p) => {
           const url = normalizePhotoUrl(p?.url ?? '')
           const caption = clampLen(p?.caption ?? '', 60)
@@ -504,7 +513,7 @@ function App() {
         })
         .filter(Boolean),
     }),
-    [toName, fromName, message, theme, secret, photos]
+    [toName, fromName, message, theme, secret, gift, photos]
   )
 
   const shareTooLong = shareUrl.length > MAX_SHARE_URL_LEN
@@ -696,6 +705,7 @@ function App() {
       setMessage(sanitized.message)
       setTheme(sanitized.theme)
       setSecret(sanitized.secret)
+      setGift(sanitized.gift || '❤')
       setPhotos(sanitized.photos)
       setLocked(false)
       setViewerStep('envelope')
@@ -728,6 +738,7 @@ function App() {
       setMessage(sanitized.message)
       setTheme(sanitized.theme)
       setSecret(sanitized.secret)
+      setGift(sanitized.gift || '❤')
       setPhotos(sanitized.photos)
       setLocked(false)
       setViewerStep('envelope')
@@ -740,12 +751,18 @@ function App() {
   }
 
   function onOpenEnvelope() {
-    const hasPhotos = Array.isArray(payload.photos) && payload.photos.length > 0
-    setViewerStep(hasPhotos ? 'reveal' : 'question')
+    if (openingTimerRef.current) window.clearTimeout(openingTimerRef.current)
+    if (prefersReducedMotion()) {
+      setViewerStep('card')
+      return
+    }
+    setViewerStep('opening')
     setHeartTaps(0)
     setNoStyle(null)
     setNoDodges(0)
-    showToast('Okay… one question first')
+    openingTimerRef.current = window.setTimeout(() => {
+      setViewerStep('card')
+    }, 1150)
   }
 
   function onContinueAfterReveal() {
@@ -774,7 +791,7 @@ function App() {
 
   function onAddPhoto() {
     if ((Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS) {
-      showToast('Max 6 photos')
+      showToast(`Max ${MAX_PHOTOS} photos`)
       return
     }
     if (photoBusy) return
@@ -811,12 +828,12 @@ function App() {
         return
       }
       if ((Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS) {
-        showToast('Max 6 photos')
+        showToast(`Max ${MAX_PHOTOS} photos`)
         return
       }
       setPhotoBusy(true)
       showToast('Compressing photo…')
-      const dataUrl = await fileToCompressedDataUrl(file, { maxDim: 900, quality: 0.78, targetDataUrlLen: 120000 })
+      const dataUrl = await fileToCompressedDataUrl(file, { maxDim: 900, quality: 0.78, targetDataUrlLen: 90000 })
       setPhotos((list) => {
         const next = Array.isArray(list) ? [...list] : []
         if (next.length >= MAX_PHOTOS) return next
@@ -903,7 +920,7 @@ function App() {
             <div className="field">
               <div className="labelRow">
                 <span>Photo album (shows when envelope opens)</span>
-                <span className="hint">{Array.isArray(photos) ? photos.length : 0}/6</span>
+                <span className="hint">{Array.isArray(photos) ? photos.length : 0}/{MAX_PHOTOS}</span>
               </div>
 
               <div className="photoComposer">
@@ -932,7 +949,7 @@ function App() {
                   className="secondary"
                   type="button"
                   onClick={onAddPhoto}
-                  disabled={photoBusy || (Array.isArray(photos) ? photos.length : 0) >= 6}
+                  disabled={photoBusy || (Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS}
                 >
                   {photoBusy ? 'Working…' : 'Add photo'}
                 </button>
@@ -941,7 +958,7 @@ function App() {
                   className="ghost"
                   type="button"
                   onClick={onAddPhotoByUrl}
-                  disabled={(Array.isArray(photos) ? photos.length : 0) >= 6}
+                  disabled={(Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS}
                 >
                   Add by URL
                 </button>
@@ -1042,6 +1059,26 @@ function App() {
                     role="radio"
                   >
                     {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="field">
+              <div className="labelRow">
+                <span>Gift inside the envelope</span>
+              </div>
+              <div className="themeRow" role="radiogroup" aria-label="Gift">
+                {['🌹', '❤', '🧸'].map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    className={g === gift ? 'chip chipActive' : 'chip'}
+                    onClick={() => setGift(g)}
+                    aria-checked={g === gift}
+                    role="radio"
+                  >
+                    {g}
                   </button>
                 ))}
               </div>
@@ -1157,7 +1194,12 @@ function App() {
                     <button className="envelope" onClick={onOpenEnvelope}>
                       <span className="envTop" aria-hidden="true" />
                       <span className="envBody" aria-hidden="true" />
-                      <span className="envSeal" aria-hidden="true">❤</span>
+                      <span className="envLetter" aria-hidden="true">
+                        <span className="envLetterLine" />
+                        <span className="envLetterLine" />
+                        <span className="envLetterLine short" />
+                      </span>
+                      <span className="envSeal" aria-hidden="true">{payload.gift || '❤'}</span>
                       <span className="envText">
                         Tap to open
                       </span>
@@ -1168,11 +1210,35 @@ function App() {
                   </div>
                 ) : null}
 
+                {viewerStep === 'opening' ? (
+                  <div className="openingStage" aria-label="Opening envelope">
+                    <div className="bouquetBurst" aria-hidden="true">
+                      <span className="bouquetFlower f1" />
+                      <span className="bouquetFlower f2" />
+                      <span className="bouquetFlower f3" />
+                      <span className="bouquetFlower f4" />
+                      <span className="bouquetFlower f5" />
+                      <span className="bouquetWrap" />
+                    </div>
+
+                    <div className="envelope envelopeOpening" aria-hidden="true">
+                      <span className="envTop" aria-hidden="true" />
+                      <span className="envBody" aria-hidden="true" />
+                      <span className="envLetter" aria-hidden="true">
+                        <span className="envLetterLine" />
+                        <span className="envLetterLine" />
+                        <span className="envLetterLine short" />
+                      </span>
+                      <span className="envSeal" aria-hidden="true">{payload.gift || '❤'}</span>
+                    </div>
+                  </div>
+                ) : null}
+
                 {viewerStep === 'reveal' ? (
                   <div className="revealStage">
-                    <div className="revealTitle">A little photo surprise ✨</div>
+                    <div className="revealTitle">{payload.gift || '❤'} A little photo surprise ✨</div>
                     <div className="revealGrid">
-                      {(payload.photos || []).slice(0, 6).map((p, idx) => (
+                      {(payload.photos || []).slice(0, MAX_PHOTOS).map((p, idx) => (
                         <figure className="polaroid" key={`${p.url}-${idx}`}>
                           <img src={p.url} alt={p.caption || `Photo ${idx + 1}`} loading="lazy" />
                           <figcaption>{p.caption || ' '}</figcaption>
@@ -1275,32 +1341,41 @@ function App() {
                 </div>
               ) : null}
 
-              <h2 className="toLine">
-                {payload.to ? `Dear ${payload.to},` : 'Dear you,'}
-              </h2>
-              <p className="message">{payload.message || 'You are loved.'}</p>
-              <div className="fromLine">
-                <span className="fromLabel">—</span>
-                <span className="fromName">{payload.from || 'Someone who cares'}</span>
-              </div>
-
-              {Array.isArray(payload.photos) && payload.photos.length ? (
-                <div className="photoStrip" aria-label="Photos">
-                  {payload.photos.slice(0, 6).map((p, idx) => (
-                    <button
-                      key={`${p.url}-${idx}`}
-                      type="button"
-                      className="photoMini"
-                      onClick={() => {
-                        showToast(p.caption || `Photo ${idx + 1}`)
-                      }}
-                      title={p.caption || `Photo ${idx + 1}`}
-                    >
-                      <img src={p.url} alt={p.caption || `Photo ${idx + 1}`} loading="lazy" />
-                    </button>
-                  ))}
+              {mode === 'view' && sharedExperienceEnabled && !locked && viewerStep !== 'card' ? (
+                <div className="sealedNote">
+                  <div className="sealedTitle">Sealed letter</div>
+                  <div className="sealedBody">The message is inside — open the envelope.</div>
                 </div>
               ) : null}
+
+              {mode !== 'view' || !sharedExperienceEnabled || (!locked && viewerStep === 'card') ? (
+                <>
+                  <h2 className="toLine">
+                    {payload.to ? `Dear ${payload.to},` : 'Dear you,'}
+                  </h2>
+                  <p className="message">{payload.message || 'You are loved.'}</p>
+                  <div className="fromLine">
+                    <span className="fromLabel">—</span>
+                    <span className="fromName">{payload.from || 'Someone who cares'}</span>
+                  </div>
+
+                  {Array.isArray(payload.photos) && payload.photos.length ? (
+                    <div className="photoStrip" aria-label="Photos">
+                      {payload.photos.slice(0, MAX_PHOTOS).map((p, idx) => (
+                        <button
+                          key={`${p.url}-${idx}`}
+                          type="button"
+                          className="photoMini"
+                          onClick={() => {
+                            showToast(p.caption || `Photo ${idx + 1}`)
+                          }}
+                          title={p.caption || `Photo ${idx + 1}`}
+                        >
+                          <img src={p.url} alt={p.caption || `Photo ${idx + 1}`} loading="lazy" />
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
 
               <div className="secretWrap">
                 <button
@@ -1316,6 +1391,8 @@ function App() {
                     : `Tap the heart to unlock a secret (${Math.min(7, heartTaps)}/7)`}
                 </div>
               </div>
+                </>
+              ) : null}
             </div>
 
             <div className="cardBottom">

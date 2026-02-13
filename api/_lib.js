@@ -54,9 +54,13 @@ export function sanitizeCardPayload(decoded) {
   const theme = clampLen(decoded.theme ?? 'rose', 20)
   const secret = clampLen(decoded.secret ?? '', 140)
 
+  const giftRaw = clampLen(decoded.gift ?? '❤', 10)
+  const allowedGifts = new Set(['❤', '🌹', '🧸'])
+  const gift = allowedGifts.has(giftRaw) ? giftRaw : '❤'
+
   const photosRaw = Array.isArray(decoded.photos) ? decoded.photos : []
   const photos = photosRaw
-    .slice(0, 6)
+    .slice(0, 15)
     .map((p) => {
       const raw = typeof p?.url === 'string' ? p.url.trim() : ''
       const limit = raw.startsWith('data:image/') ? 900000 : 2000
@@ -69,7 +73,7 @@ export function sanitizeCardPayload(decoded) {
 
   if (!from && !to && !message) return null
 
-  return { from, to, message, theme, secret, photos }
+  return { from, to, message, theme, secret, gift, photos }
 }
 
 export function pbkdf2HashPassword(password, saltB64) {
