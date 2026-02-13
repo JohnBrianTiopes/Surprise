@@ -194,6 +194,28 @@ async function fileToCompressedDataUrl(
   return bestLen < dataUrl.length ? best : dataUrl
 }
 
+async function dataUrlToBlob(dataUrl) {
+  const res = await fetch(String(dataUrl || ''))
+  return await res.blob()
+}
+
+async function uploadPhotoBlob(blob) {
+  const fd = new FormData()
+  const name = 'photo.jpg'
+  fd.append('file', blob, name)
+  const res = await fetch('/api/photos/upload', { method: 'POST', body: fd })
+  if (res.status === 404) {
+    const err = new Error('Uploads not available')
+    err.code = 'NO_API'
+    throw err
+  }
+  const data = await res.json().catch(() => null)
+  if (!res.ok) throw new Error(data?.error || 'Upload failed')
+  const url = String(data?.url || '')
+  if (!url) throw new Error('Upload failed')
+  return url
+}
+
 function encodePayload(payload) {
   const json = JSON.stringify(payload)
   const bytes = new TextEncoder().encode(json)
@@ -871,16 +893,35 @@ function App() {
         return
       }
       setPhotoBusy(true)
-      showToast('Compressing photo…')
-      const dataUrl = await fileToCompressedDataUrl(file, { maxDim: 900, quality: 0.78, targetDataUrlLen: 90000 })
+      showToast('Preparing photo…')
+
+      // Compress locally first so uploads are fast and reliable.
+      const dataUrl = await fileToCompressedDataUrl(file, { maxDim: 1200, quality: 0.82, targetDataUrlLen: 260000 })
+
+      let finalUrl = dataUrl
+      try {
+        showToast('Uploading photo…')
+        const blob = await dataUrlToBlob(dataUrl)
+        finalUrl = await uploadPhotoBlob(blob)
+        showToast('Photo uploaded')
+      } catch (err) {
+        const code = String(err?.code || '')
+        if (code === 'NO_API') {
+          showToast('Uploads only work on your deployed Vercel site — embedding for now')
+        } else {
+          showToast('Upload failed — embedding photo in link instead')
+        }
+      }
+
       setPhotos((list) => {
         const next = Array.isArray(list) ? [...list] : []
         if (next.length >= MAX_PHOTOS) return next
-        next.push({ url: dataUrl, caption: clampLen(newPhotoCaption, 60) })
+        next.push({ url: finalUrl, caption: clampLen(newPhotoCaption, 60) })
         return next
       })
       setNewPhotoCaption('')
-      showToast('Photo added from device')
+      if (finalUrl.startsWith('http')) showToast('Photo added (hosted)')
+      else showToast('Photo added from device')
     } catch (err) {
       const msg = String(err?.message || '')
       if (msg.toLowerCase().includes('image load failed')) {
