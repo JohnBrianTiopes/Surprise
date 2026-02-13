@@ -460,6 +460,7 @@ function App() {
   const sharedExperienceEnabled = hasSharedLink
   const [viewerStep, setViewerStep] = useState(sharedExperienceEnabled ? 'envelope' : 'card')
   const openingTimerRef = useRef(null)
+  const bouquetTimerRef = useRef(null)
   const [confettiOn, setConfettiOn] = useState(false)
   const [heartTaps, setHeartTaps] = useState(0)
   const noAreaRef = useRef(null)
@@ -519,6 +520,7 @@ function App() {
     return () => {
       if (toastTimer.current) window.clearTimeout(toastTimer.current)
       if (openingTimerRef.current) window.clearTimeout(openingTimerRef.current)
+      if (bouquetTimerRef.current) window.clearTimeout(bouquetTimerRef.current)
     }
   }, [])
 
@@ -843,7 +845,16 @@ function App() {
   }
 
   function onYes() {
-    setViewerStep('card')
+    if (bouquetTimerRef.current) window.clearTimeout(bouquetTimerRef.current)
+
+    if (sharedExperienceEnabled && !prefersReducedMotion()) {
+      setViewerStep('bouquet')
+      bouquetTimerRef.current = window.setTimeout(() => {
+        setViewerStep('card')
+      }, 2200)
+    } else {
+      setViewerStep('card')
+    }
     setConfettiOn(true)
     if (soundOn) playChime()
     window.setTimeout(() => setConfettiOn(false), 1400)
@@ -1367,6 +1378,22 @@ function App() {
                     </div>
                     <div className="miniInfo">
                       {noDodges >= 3 ? 'The “No” button is shy.' : 'Try clicking “No”… if you can.'}
+                    </div>
+                  </div>
+                ) : null}
+
+                {viewerStep === 'bouquet' ? (
+                  <div className="bouquetStage" aria-label="Bouquet">
+                    <div className="bouquetBurst bouquetStay" aria-hidden="true">
+                      <span className="bouquetFlower f1" />
+                      <span className="bouquetFlower f2" />
+                      <span className="bouquetFlower f3" />
+                      <span className="bouquetFlower f4" />
+                      <span className="bouquetFlower f5" />
+                      <span className="bouquetWrap" />
+                    </div>
+                    <div className="miniInfo" style={{ marginTop: 4 }}>
+                      A bouquet for you…
                     </div>
                   </div>
                 ) : null}

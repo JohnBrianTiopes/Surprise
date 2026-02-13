@@ -672,6 +672,14 @@ button:active {
   padding: 10px 0 6px;
 }
 
+.bouquetStage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 10px 0 6px;
+  min-height: 180px;
+}
+
 .bouquetBurst {
   position: absolute;
   top: 2px;
@@ -682,6 +690,10 @@ button:active {
   pointer-events: none;
   filter: hue-rotate(210deg) saturate(1.65);
   animation: bouquetBurst 2.3s ease both;
+}
+
+.bouquetStay {
+  animation: bouquetStay 2.2s ease both;
 }
 
 .bouquetFlower {
@@ -726,6 +738,13 @@ button:active {
   0% { opacity: 0; transform: translateX(-50%) translateY(18px) scale(0.92); }
   22% { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1); }
   72% { opacity: 1; transform: translateX(-50%) translateY(-2px) scale(1.01); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(1.02); }
+}
+
+@keyframes bouquetStay {
+  0% { opacity: 0; transform: translateX(-50%) translateY(20px) scale(0.92); }
+  18% { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1); }
+  78% { opacity: 1; transform: translateX(-50%) translateY(-2px) scale(1.01); }
   100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(1.02); }
 }
 
