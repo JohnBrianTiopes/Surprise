@@ -412,7 +412,7 @@ function App() {
   const [newPhotoCaption, setNewPhotoCaption] = useState('')
   const fileInputRef = useRef(null)
   const [photoBusy, setPhotoBusy] = useState(false)
-  const [soundOn, setSoundOn] = useState(false)
+  const [soundOn, setSoundOn] = useState(() => Boolean(hasSharedLink))
   const [shareUrl, setShareUrl] = useState(() =>
     hasSharedLink ? window.location.href : buildShareUrl({ to: toName, from: fromName, message, theme, secret, photos })
   )
@@ -709,6 +709,7 @@ function App() {
       setPhotos(sanitized.photos)
       setLocked(false)
       setViewerStep('envelope')
+      if (soundOn) playChime()
       showToast('Opened')
     } catch {
       showToast('Private links only work on the deployed Vercel site')
@@ -742,6 +743,7 @@ function App() {
       setPhotos(sanitized.photos)
       setLocked(false)
       setViewerStep('envelope')
+      if (soundOn) playChime()
       showToast('Unlocked')
     } catch {
       showToast('Wrong passcode')
@@ -752,6 +754,7 @@ function App() {
 
   function onOpenEnvelope() {
     if (openingTimerRef.current) window.clearTimeout(openingTimerRef.current)
+    if (soundOn) playChime()
     if (prefersReducedMotion()) {
       const hasPhotos = Array.isArray(payload.photos) && payload.photos.length > 0
       setViewerStep(hasPhotos ? 'reveal' : 'question')
@@ -1151,21 +1154,23 @@ function App() {
             <div className="cardTop">
               <div className="badge">❤ Valentine ❤</div>
               <div className="miniActions">
-                <button
-                  className="tiny"
-                  onClick={() => {
-                    if (mode === 'view') {
-                      setMode('create')
-                      showToast('Editing')
-                      return
-                    }
-                    setMode('view')
-                    setViewerStep(sharedExperienceEnabled ? 'envelope' : 'card')
-                    showToast('Preview')
-                  }}
-                >
-                  {mode === 'view' ? 'Edit' : 'Preview'}
-                </button>
+                {!hasSharedLink ? (
+                  <button
+                    className="tiny"
+                    onClick={() => {
+                      if (mode === 'view') {
+                        setMode('create')
+                        showToast('Editing')
+                        return
+                      }
+                      setMode('view')
+                      setViewerStep(sharedExperienceEnabled ? 'envelope' : 'card')
+                      showToast('Preview')
+                    }}
+                  >
+                    {mode === 'view' ? 'Edit' : 'Preview'}
+                  </button>
+                ) : null}
               </div>
             </div>
 
