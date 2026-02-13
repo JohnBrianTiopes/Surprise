@@ -275,7 +275,7 @@ function getSharedFromUrl() {
     const hashPlain = hashParams.get('v')
     if (hashPlain) {
       const decoded = decodePayload(hashPlain)
-      if (!decoded || typeof decoded !== 'object') return null
+      if (!decoded || typeof decoded !== 'object') return { kind: 'plain', payload: null }
       return { kind: 'plain', payload: decoded }
     }
 
@@ -295,7 +295,7 @@ function getSharedFromUrl() {
     const plain = params.get('v')
     if (!plain) return null
     const decoded = decodePayload(plain)
-    if (!decoded || typeof decoded !== 'object') return null
+    if (!decoded || typeof decoded !== 'object') return { kind: 'plain', payload: null }
     return { kind: 'plain', payload: decoded }
   } catch {
     return null
@@ -458,6 +458,20 @@ function App() {
   const [loginBusy, setLoginBusy] = useState(false)
 
   const sharedExperienceEnabled = hasSharedLink
+
+  const isRecipientView = useMemo(() => {
+    if (mode !== 'view') return false
+    if (hasSharedLink) return true
+    try {
+      const s = new URLSearchParams(window.location.search)
+      const hashRaw = String(window.location.hash || '')
+      const hash = hashRaw.startsWith('#') ? hashRaw.slice(1) : hashRaw
+      const h = new URLSearchParams(hash)
+      return Boolean(s.get('id') || s.get('v') || s.get('e') || h.get('v') || h.get('e'))
+    } catch {
+      return false
+    }
+  }, [mode, hasSharedLink])
   const [viewerStep, setViewerStep] = useState(sharedExperienceEnabled ? 'envelope' : 'card')
   const openingTimerRef = useRef(null)
   const bouquetTimerRef = useRef(null)
@@ -959,14 +973,14 @@ function App() {
           <div className="brandMark" aria-hidden="true">❤</div>
           <div className="brandText">
             <div className="brandTitle">Surprise Gift</div>
-            {!hasSharedLink ? (
+          {!isRecipientView ? (
               <div className="brandSub">Valentine link you can share</div>
             ) : null}
           </div>
         </div>
 
         <div className="topActions">
-          {!hasSharedLink ? (
+        {!isRecipientView ? (
             <button className="ghost" onClick={onStartOver}>
               Create
             </button>
@@ -981,7 +995,7 @@ function App() {
           >
             {soundOn ? 'Sound: On' : 'Sound: Off'}
           </button>
-          {!hasSharedLink ? (
+          {!isRecipientView ? (
             <button className="primary" onClick={onShare}>
               Share
             </button>
@@ -1514,7 +1528,7 @@ function App() {
               <div className="smallMuted">
                 Tip: the card lives in the URL. Add a passcode to lock it.
               </div>
-              {!hasSharedLink ? (
+              {!isRecipientView ? (
                 <div className="ctaRow">
                   <button className="secondary" onClick={onCopy}>
                     Copy link
