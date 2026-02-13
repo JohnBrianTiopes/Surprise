@@ -335,7 +335,6 @@ function App() {
   const [privateUrl, setPrivateUrl] = useState('')
   const [privateBusy, setPrivateBusy] = useState(false)
 
-  const [newPhotoUrl, setNewPhotoUrl] = useState('')
   const [newPhotoCaption, setNewPhotoCaption] = useState('')
   const fileInputRef = useRef(null)
   const [photoBusy, setPhotoBusy] = useState(false)
@@ -543,7 +542,7 @@ function App() {
       setPrivateUrl(String(data?.url || ''))
       showToast('Private link created')
     } catch {
-      showToast('Private links require Vercel deploy')
+      showToast('Private links only work on the deployed Vercel site')
     } finally {
       setPrivateBusy(false)
     }
@@ -618,7 +617,7 @@ function App() {
       setViewerStep('envelope')
       showToast('Opened')
     } catch {
-      showToast('Private links require Vercel deploy')
+      showToast('Private links only work on the deployed Vercel site')
     } finally {
       setLoginBusy(false)
     }
@@ -690,21 +689,12 @@ function App() {
   }
 
   function onAddPhoto() {
-    const url = clampLen(newPhotoUrl, 500)
-    const caption = clampLen(newPhotoCaption, 60)
-    if (!isSupportedImageSrc(url)) {
-      showToast('Paste a public image URL (https://...) or a data:image/... URL')
+    if ((Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS) {
+      showToast('Max 6 photos')
       return
     }
-    setPhotos((list) => {
-      const next = Array.isArray(list) ? [...list] : []
-      if (next.length >= MAX_PHOTOS) return next
-      next.push({ url, caption })
-      return next
-    })
-    setNewPhotoUrl('')
-    setNewPhotoCaption('')
-    showToast('Photo added')
+    if (photoBusy) return
+    fileInputRef.current?.click?.()
   }
 
   async function onAddFromDevice(e) {
@@ -725,6 +715,7 @@ function App() {
         next.push({ url: dataUrl, caption: clampLen(newPhotoCaption, 60) })
         return next
       })
+      setNewPhotoCaption('')
       showToast('Photo added from device')
     } catch {
       showToast('Could not add photo')
@@ -804,21 +795,26 @@ function App() {
 
               <div className="photoComposer">
                 <input
-                  value={newPhotoUrl}
-                  onChange={(e) => setNewPhotoUrl(e.target.value)}
-                  placeholder="Paste image URL (https://...)"
-                  autoComplete="off"
-                  inputMode="url"
-                />
-                <input
                   value={newPhotoCaption}
                   onChange={(e) => setNewPhotoCaption(e.target.value)}
                   placeholder="Caption (optional)"
                   maxLength={60}
                   autoComplete="off"
                 />
-                <button className="secondary" type="button" onClick={onAddPhoto} disabled={(Array.isArray(photos) ? photos.length : 0) >= 6}>
-                  Add photo
+                <input
+                  ref={fileInputRef}
+                  className="fileInput"
+                  type="file"
+                  accept="image/*"
+                  onChange={onAddFromDevice}
+                />
+                <button
+                  className="secondary"
+                  type="button"
+                  onClick={onAddPhoto}
+                  disabled={photoBusy || (Array.isArray(photos) ? photos.length : 0) >= 6}
+                >
+                  {photoBusy ? 'Working…' : 'Add photo'}
                 </button>
               </div>
 
@@ -840,7 +836,7 @@ function App() {
                   ))}
                 </div>
               ) : (
-                <div className="miniInfo">Tip: use a public image URL (anyone can open it). The link must not require login.</div>
+                <div className="miniInfo">Tip: picking a photo embeds it into the share link (bigger photos = longer link).</div>
               )}
             </div>
 
