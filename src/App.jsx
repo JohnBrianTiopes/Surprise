@@ -534,6 +534,10 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payload, username: username.trim(), password }),
       })
+      if (res.status === 404) {
+        showToast('Private link needs Vercel deploy (no API here)')
+        return
+      }
       const data = await res.json().catch(() => null)
       if (!res.ok) {
         showToast(data?.error || 'Could not create private link')
@@ -588,6 +592,10 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cardId, username, password }),
       })
+      if (loginRes.status === 404) {
+        showToast('Private link needs Vercel deploy (no API here)')
+        return
+      }
       const loginData = await loginRes.json().catch(() => null)
       if (!loginRes.ok) {
         showToast(loginData?.error || 'Login failed')
@@ -595,6 +603,10 @@ function App() {
       }
 
       const cardRes = await fetch(`/api/private/card?id=${encodeURIComponent(cardId)}`)
+      if (cardRes.status === 404) {
+        showToast('Private link needs Vercel deploy (no API here)')
+        return
+      }
       const cardData = await cardRes.json().catch(() => null)
       if (!cardRes.ok) {
         showToast(cardData?.error || 'Could not load card')
@@ -702,6 +714,12 @@ function App() {
     e.target.value = ''
     if (!file) return
     try {
+      const name = String(file.name || '').toLowerCase()
+      const type = String(file.type || '').toLowerCase()
+      if (type === 'image/heic' || type === 'image/heif' || name.endsWith('.heic') || name.endsWith('.heif')) {
+        showToast('HEIC photos may not work here — choose JPG/PNG')
+        return
+      }
       if ((Array.isArray(photos) ? photos.length : 0) >= MAX_PHOTOS) {
         showToast('Max 6 photos')
         return
@@ -717,8 +735,13 @@ function App() {
       })
       setNewPhotoCaption('')
       showToast('Photo added from device')
-    } catch {
-      showToast('Could not add photo')
+    } catch (err) {
+      const msg = String(err?.message || '')
+      if (msg.toLowerCase().includes('image load failed')) {
+        showToast('That image type may not be supported — try JPG/PNG')
+      } else {
+        showToast('Could not add photo')
+      }
     } finally {
       setPhotoBusy(false)
     }
@@ -762,7 +785,7 @@ function App() {
         </div>
       </header>
 
-      <main className="layout">
+      <main className={mode === 'view' ? 'layout layoutSingle' : 'layout'}>
         {mode === 'create' ? (
         <section className="panel">
           <div className="panelHeader">

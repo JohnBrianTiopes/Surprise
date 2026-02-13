@@ -138,6 +138,15 @@
   gap: 18px;
 }
 
+.layoutSingle {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+.layoutSingle .cardWrap {
+  width: min(560px, 100%);
+}
+
 @media (max-width: 920px) {
   .layout {
     grid-template-columns: 1fr;
