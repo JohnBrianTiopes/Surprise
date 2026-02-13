@@ -114,6 +114,7 @@ function isSupportedImageSrc(url) {
 
 const MAX_PHOTOS = 6
 const MAX_SHARE_URL_LEN = 7000
+const MAX_MESSAGE_LEN = 2000
 
 async function fileToCompressedDataUrl(file, { maxDim = 900, quality = 0.78 } = {}) {
   if (!file) throw new Error('No file')
@@ -223,7 +224,7 @@ function sanitizeCardPayload(decoded) {
   if (!decoded || typeof decoded !== 'object') return null
   const from = clampLen(decoded.from ?? '', 30)
   const to = clampLen(decoded.to ?? '', 30)
-  const message = clampLen(decoded.message ?? '', 280)
+  const message = clampLen(decoded.message ?? '', MAX_MESSAGE_LEN)
   const theme = clampLen(decoded.theme ?? 'rose', 20)
   const secret = clampLen(decoded.secret ?? '', 140)
   const photosRaw = Array.isArray(decoded.photos) ? decoded.photos : []
@@ -373,7 +374,7 @@ function App() {
     const nextPayload = {
       to: clampLen(toName, 30),
       from: clampLen(fromName, 30),
-      message: clampLen(message, 280),
+      message: clampLen(message, MAX_MESSAGE_LEN),
       theme,
       secret: clampLen(secret, 140),
       photos: (Array.isArray(photos) ? photos : []).slice(0, 6).map((p) => ({
@@ -420,7 +421,7 @@ function App() {
     () => ({
       to: clampLen(toName, 30),
       from: clampLen(fromName, 30),
-      message: clampLen(message, 280),
+      message: clampLen(message, MAX_MESSAGE_LEN),
       theme,
       secret: clampLen(secret, 140),
       photos: (Array.isArray(photos) ? photos : []).slice(0, 6).map((p) => ({
@@ -894,13 +895,13 @@ function App() {
             <label className="field">
               <div className="labelRow">
                 <span>Message</span>
-                <span className="hint">{message.trim().length}/280</span>
+                <span className="hint">{message.trim().length}/{MAX_MESSAGE_LEN}</span>
               </div>
               <textarea
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 rows={6}
-                maxLength={280}
+                maxLength={MAX_MESSAGE_LEN}
                 placeholder="Write something sweet…"
               />
             </label>
