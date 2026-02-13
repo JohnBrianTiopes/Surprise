@@ -435,8 +435,11 @@ button:active {
 
 .card {
   border-radius: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  border: 1px solid color-mix(in oklab, var(--accent) 28%, rgba(255, 255, 255, 0.14));
+  background:
+    radial-gradient(520px 220px at 10% 0%, color-mix(in oklab, var(--accent) 20%, transparent), transparent 60%),
+    radial-gradient(520px 240px at 95% 10%, color-mix(in oklab, var(--accent2) 18%, transparent), transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.085), rgba(255, 255, 255, 0.03));
   backdrop-filter: blur(10px);
   box-shadow: 0 35px 90px rgba(0, 0, 0, 0.45);
   overflow: hidden;
@@ -472,8 +475,11 @@ button:active {
   color: rgba(255, 255, 255, 0.82);
   padding: 8px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid color-mix(in oklab, var(--accent2) 20%, rgba(255, 255, 255, 0.14));
+  background:
+    radial-gradient(220px 60px at 30% 20%, color-mix(in oklab, var(--accent) 24%, transparent), transparent 60%),
+    rgba(0, 0, 0, 0.16);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.32);
 }
 
 .miniActions {

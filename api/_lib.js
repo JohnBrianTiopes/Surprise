@@ -59,7 +59,7 @@ export function sanitizeCardPayload(decoded) {
     .slice(0, 6)
     .map((p) => {
       const raw = typeof p?.url === 'string' ? p.url.trim() : ''
-      const limit = raw.startsWith('data:image/') ? 280000 : 2000
+      const limit = raw.startsWith('data:image/') ? 900000 : 2000
       const url = clampLen(raw, limit)
       const caption = clampLen(p?.caption ?? '', 60)
       if (!isSupportedImageSrc(url)) return null

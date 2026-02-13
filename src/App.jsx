@@ -115,13 +115,17 @@ function isSupportedImageSrc(url) {
 const MAX_PHOTOS = 6
 const MAX_SHARE_URL_LEN = 7000
 const MAX_MESSAGE_LEN = 2000
-const MAX_DATA_IMAGE_URL_LEN = 280000
+const MAX_DATA_IMAGE_URL_LEN = 900000
 const MAX_HTTP_IMAGE_URL_LEN = 2000
 
 function clampPhotoUrl(url) {
   const raw = typeof url === 'string' ? url.trim() : ''
   const limit = raw.startsWith('data:image/') ? MAX_DATA_IMAGE_URL_LEN : MAX_HTTP_IMAGE_URL_LEN
   return clampLen(raw, limit)
+}
+
+function normalizePhotoUrl(url) {
+  return typeof url === 'string' ? url.trim() : ''
 }
 
 async function fileToCompressedDataUrl(file, { maxDim = 900, quality = 0.78 } = {}) {
@@ -339,6 +343,14 @@ function App() {
   const [photos, setPhotos] = useState(initialPlainPayload?.photos ?? [])
   const [passcode, setPasscode] = useState('')
 
+  const [cardNonce, setCardNonce] = useState(() => {
+    try {
+      return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    } catch {
+      return `${Date.now()}-${Math.random().toString(16).slice(2)}`
+    }
+  })
+
   const [privateUser, setPrivateUser] = useState('')
   const [privatePass, setPrivatePass] = useState('')
   const [privateUrl, setPrivateUrl] = useState('')
@@ -385,6 +397,7 @@ function App() {
       message: clampLen(message, MAX_MESSAGE_LEN),
       theme,
       secret: clampLen(secret, 140),
+      nonce: clampLen(cardNonce, 80),
       photos: (Array.isArray(photos) ? photos : []).slice(0, 6).map((p) => ({
         url: clampPhotoUrl(p?.url ?? ''),
         caption: clampLen(p?.caption ?? '', 60),
@@ -412,7 +425,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [mode, hasSharedLink, toName, fromName, message, theme, secret, photos, passcode])
+  }, [mode, hasSharedLink, toName, fromName, message, theme, secret, photos, passcode, cardNonce])
 
   useEffect(() => {
     const titleBase = toName ? `A Valentine for ${toName}` : 'A Valentine'
@@ -432,10 +445,16 @@ function App() {
       message: clampLen(message, MAX_MESSAGE_LEN),
       theme,
       secret: clampLen(secret, 140),
-      photos: (Array.isArray(photos) ? photos : []).slice(0, 6).map((p) => ({
-        url: clampPhotoUrl(p?.url ?? ''),
-        caption: clampLen(p?.caption ?? '', 60),
-      })),
+      // For rendering, keep the full photo URLs (especially data:image/...) so images don't break.
+      photos: (Array.isArray(photos) ? photos : [])
+        .slice(0, 6)
+        .map((p) => {
+          const url = normalizePhotoUrl(p?.url ?? '')
+          const caption = clampLen(p?.caption ?? '', 60)
+          if (!isSupportedImageSrc(url)) return null
+          return { url, caption }
+        })
+        .filter(Boolean),
     }),
     [toName, fromName, message, theme, secret, photos]
   )
@@ -522,6 +541,11 @@ function App() {
     setHeartTaps(0)
     setNoStyle(null)
     setNoDodges(0)
+    try {
+      setCardNonce(globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`)
+    } catch {
+      setCardNonce(`${Date.now()}-${Math.random().toString(16).slice(2)}`)
+    }
     showToast('Create a new one')
   }
 
