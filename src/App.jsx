@@ -948,14 +948,18 @@ function App() {
           <div className="brandMark" aria-hidden="true">❤</div>
           <div className="brandText">
             <div className="brandTitle">Surprise Gift</div>
-            <div className="brandSub">Valentine link you can share</div>
+            {!hasSharedLink ? (
+              <div className="brandSub">Valentine link you can share</div>
+            ) : null}
           </div>
         </div>
 
         <div className="topActions">
-          <button className="ghost" onClick={onStartOver}>
-            Create
-          </button>
+          {!hasSharedLink ? (
+            <button className="ghost" onClick={onStartOver}>
+              Create
+            </button>
+          ) : null}
           <button
             className={soundOn ? 'secondary' : 'ghost'}
             onClick={() => {
@@ -966,9 +970,11 @@ function App() {
           >
             {soundOn ? 'Sound: On' : 'Sound: Off'}
           </button>
-          <button className="primary" onClick={onShare}>
-            Share
-          </button>
+          {!hasSharedLink ? (
+            <button className="primary" onClick={onShare}>
+              Share
+            </button>
+          ) : null}
         </div>
       </header>
 
@@ -1481,14 +1487,16 @@ function App() {
               <div className="smallMuted">
                 Tip: the card lives in the URL. Add a passcode to lock it.
               </div>
-              <div className="ctaRow">
-                <button className="secondary" onClick={onCopy}>
-                  Copy link
-                </button>
-                <button className="primary" onClick={onShare}>
-                  Share
-                </button>
-              </div>
+              {!hasSharedLink ? (
+                <div className="ctaRow">
+                  <button className="secondary" onClick={onCopy}>
+                    Copy link
+                  </button>
+                  <button className="primary" onClick={onShare}>
+                    Share
+                  </button>
+                </div>
+              ) : null}
             </div>
           </article>
         </section>
