@@ -681,7 +681,7 @@ button:active {
   height: 170px;
   pointer-events: none;
   filter: hue-rotate(210deg) saturate(1.65);
-  animation: bouquetBurst 1.05s ease both;
+  animation: bouquetBurst 2.3s ease both;
 }
 
 .bouquetFlower {
@@ -724,22 +724,23 @@ button:active {
 
 @keyframes bouquetBurst {
   0% { opacity: 0; transform: translateX(-50%) translateY(18px) scale(0.92); }
-  35% { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1); }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-8px) scale(1.02); }
+  22% { opacity: 1; transform: translateX(-50%) translateY(0px) scale(1); }
+  72% { opacity: 1; transform: translateX(-50%) translateY(-2px) scale(1.01); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-10px) scale(1.02); }
 }
 
 .envelopeOpening .envTop {
-  animation: openFlap 0.55s ease forwards;
+  animation: openFlap 0.75s ease forwards;
 }
 
 .envelopeOpening .envSeal {
-  animation: sealPop 0.45s ease forwards;
-  animation-delay: 0.18s;
+  animation: sealPop 0.55s ease forwards;
+  animation-delay: 0.22s;
 }
 
 .envelopeOpening .envLetter {
-  animation: letterOut 0.95s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
-  animation-delay: 0.14s;
+  animation: letterOut 1.25s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+  animation-delay: 0.16s;
 }
 
 @keyframes openFlap {

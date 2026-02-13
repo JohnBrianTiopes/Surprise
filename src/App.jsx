@@ -753,7 +753,8 @@ function App() {
   function onOpenEnvelope() {
     if (openingTimerRef.current) window.clearTimeout(openingTimerRef.current)
     if (prefersReducedMotion()) {
-      setViewerStep('card')
+      const hasPhotos = Array.isArray(payload.photos) && payload.photos.length > 0
+      setViewerStep(hasPhotos ? 'reveal' : 'question')
       return
     }
     setViewerStep('opening')
@@ -761,8 +762,10 @@ function App() {
     setNoStyle(null)
     setNoDodges(0)
     openingTimerRef.current = window.setTimeout(() => {
-      setViewerStep('card')
-    }, 1150)
+      const hasPhotos = Array.isArray(payload.photos) && payload.photos.length > 0
+      setViewerStep(hasPhotos ? 'reveal' : 'question')
+      showToast(hasPhotos ? 'A little surprise…' : 'Okay… one question first')
+    }, 1700)
   }
 
   function onContinueAfterReveal() {
