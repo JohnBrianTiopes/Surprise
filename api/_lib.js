@@ -58,7 +58,9 @@ export function sanitizeCardPayload(decoded) {
   const photos = photosRaw
     .slice(0, 6)
     .map((p) => {
-      const url = clampLen(p?.url ?? '', 500)
+      const raw = typeof p?.url === 'string' ? p.url.trim() : ''
+      const limit = raw.startsWith('data:image/') ? 280000 : 2000
+      const url = clampLen(raw, limit)
       const caption = clampLen(p?.caption ?? '', 60)
       if (!isSupportedImageSrc(url)) return null
       return { url, caption }

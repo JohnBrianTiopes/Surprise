@@ -115,6 +115,14 @@ function isSupportedImageSrc(url) {
 const MAX_PHOTOS = 6
 const MAX_SHARE_URL_LEN = 7000
 const MAX_MESSAGE_LEN = 2000
+const MAX_DATA_IMAGE_URL_LEN = 280000
+const MAX_HTTP_IMAGE_URL_LEN = 2000
+
+function clampPhotoUrl(url) {
+  const raw = typeof url === 'string' ? url.trim() : ''
+  const limit = raw.startsWith('data:image/') ? MAX_DATA_IMAGE_URL_LEN : MAX_HTTP_IMAGE_URL_LEN
+  return clampLen(raw, limit)
+}
 
 async function fileToCompressedDataUrl(file, { maxDim = 900, quality = 0.78 } = {}) {
   if (!file) throw new Error('No file')
@@ -231,7 +239,7 @@ function sanitizeCardPayload(decoded) {
   const photos = photosRaw
     .slice(0, MAX_PHOTOS)
     .map((p) => {
-      const url = clampLen(p?.url ?? '', 500)
+      const url = clampPhotoUrl(p?.url ?? '')
       const caption = clampLen(p?.caption ?? '', 60)
       if (!isSupportedImageSrc(url)) return null
       return { url, caption }
@@ -378,7 +386,7 @@ function App() {
       theme,
       secret: clampLen(secret, 140),
       photos: (Array.isArray(photos) ? photos : []).slice(0, 6).map((p) => ({
-        url: clampLen(p?.url ?? '', 500),
+        url: clampPhotoUrl(p?.url ?? ''),
         caption: clampLen(p?.caption ?? '', 60),
       })),
     }
@@ -425,7 +433,7 @@ function App() {
       theme,
       secret: clampLen(secret, 140),
       photos: (Array.isArray(photos) ? photos : []).slice(0, 6).map((p) => ({
-        url: clampLen(p?.url ?? '', 500),
+        url: clampPhotoUrl(p?.url ?? ''),
         caption: clampLen(p?.caption ?? '', 60),
       })),
     }),
