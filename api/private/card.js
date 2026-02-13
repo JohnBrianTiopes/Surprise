@@ -19,6 +19,13 @@ export default async function handler(req, res) {
     return json(res, 500, { error: 'Missing APP_AUTH_SECRET env var' })
   }
 
+  const hasKvEnv = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+  if (!hasKvEnv) {
+    return json(res, 500, {
+      error: 'Storage not configured. In Vercel, add a Redis/KV integration to this project and redeploy.',
+    })
+  }
+
   try {
     const url = new URL(req.url, 'http://localhost')
     const id = clampLen(url.searchParams.get('id') ?? '', 80)
@@ -35,7 +42,8 @@ export default async function handler(req, res) {
     if (!record) return json(res, 404, { error: 'Not found' })
 
     return json(res, 200, { payload: record.payload })
-  } catch {
-    return json(res, 500, { error: 'Server error' })
+  } catch (e) {
+    const msg = String(e?.message || '')
+    return json(res, 500, { error: msg ? `Server error: ${msg}` : 'Server error' })
   }
 }

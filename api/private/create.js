@@ -15,6 +15,15 @@ export default async function handler(req, res) {
     return json(res, 405, { error: 'Method not allowed' })
   }
 
+  // Vercel KV / Redis integration provides these at runtime.
+  // If they are missing, @vercel/kv won't be able to connect.
+  const hasKvEnv = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+  if (!hasKvEnv) {
+    return json(res, 500, {
+      error: 'Storage not configured. In Vercel, add a Redis/KV integration to this project and redeploy.',
+    })
+  }
+
   try {
     const body = await readJsonBody(req)
     const payload = sanitizeCardPayload(body?.payload)
@@ -49,6 +58,12 @@ export default async function handler(req, res) {
     const url = `${origin}/?id=${encodeURIComponent(id)}`
     return json(res, 200, { id, url })
   } catch (e) {
-    return json(res, 500, { error: 'Server error' })
+    const msg = String(e?.message || '')
+    if (msg.toLowerCase().includes('body too large')) {
+      return json(res, 413, { error: 'Card too large. Remove photos or reduce size.' })
+    }
+    return json(res, 500, {
+      error: msg ? `Server error: ${msg}` : 'Server error',
+    })
   }
 }

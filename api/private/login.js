@@ -21,6 +21,13 @@ export default async function handler(req, res) {
     return json(res, 500, { error: 'Missing APP_AUTH_SECRET env var' })
   }
 
+  const hasKvEnv = Boolean(process.env.KV_REST_API_URL && process.env.KV_REST_API_TOKEN)
+  if (!hasKvEnv) {
+    return json(res, 500, {
+      error: 'Storage not configured. In Vercel, add a Redis/KV integration to this project and redeploy.',
+    })
+  }
+
   try {
     const body = await readJsonBody(req)
     const cardId = clampLen(body?.cardId ?? '', 80)
@@ -46,7 +53,8 @@ export default async function handler(req, res) {
     setCookie(res, COOKIE_NAME, token, { maxAgeSeconds: 31_536_000 })
 
     return json(res, 200, { ok: true })
-  } catch {
-    return json(res, 500, { error: 'Server error' })
+  } catch (e) {
+    const msg = String(e?.message || '')
+    return json(res, 500, { error: msg ? `Server error: ${msg}` : 'Server error' })
   }
 }
