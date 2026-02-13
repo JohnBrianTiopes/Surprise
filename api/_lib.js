@@ -50,7 +50,7 @@ export function sanitizeCardPayload(decoded) {
 
   const from = clampLen(decoded.from ?? '', 30)
   const to = clampLen(decoded.to ?? '', 30)
-  const message = clampLen(decoded.message ?? '', 2000)
+  const message = clampLen(decoded.message ?? '', 5000)
   const theme = clampLen(decoded.theme ?? 'rose', 20)
   const secret = clampLen(decoded.secret ?? '', 140)
 

@@ -114,7 +114,7 @@ function isSupportedImageSrc(url) {
 
 const MAX_PHOTOS = 15
 const MAX_SHARE_URL_LEN = 800000
-const MAX_MESSAGE_LEN = 2000
+const MAX_MESSAGE_LEN = 5000
 const MAX_DATA_IMAGE_URL_LEN = 900000
 const MAX_HTTP_IMAGE_URL_LEN = 2000
 
